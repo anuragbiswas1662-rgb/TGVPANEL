@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}VM {{ vm.vm_name }} - {{ panel_name }}{% endblock %}
+{% block header_title %}VM: {{ vm.vm_name }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb">
+    <a href="{{ url_for('dashboard') }}" class="breadcrumb-item">Dashboard</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <a href="{{ url_for('admin_dashboard') }}" class="breadcrumb-item">Admin</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <a href="{{ url_for('admin_vms') }}" class="breadcrumb-item">Virtual Machines</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <span class="breadcrumb-item active">{{ vm.vm_name }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 1rem;">
+    <div class="page-title-section">
+        <h1 class="page-title">
+            <span class="title-icon"><i class="fas fa-server"></i></span>
+            {{ vm.vm_name }}
+        </h1>
+        <p class="page-subtitle">
+            {% if vm.status == 'running' %}
+                <span class="badge badge-success">Running</span>
+            {% else %}
+                <span class="badge badge-secondary">{{ vm.status or 'stopped' }}</span>
+            {% endif %}
+            <span style="margin-left: 0.5rem; opacity: 0.7;">{{ vm.hostname or vm.vm_name }}</span>
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('admin_vms') }}" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back</a>
+        {% if vm.status == 'running' %}
+            <button type="button" class="btn btn-warning btn-sm" onclick="controlVM('{{ vm.id }}', 'stop')"><i class="fas fa-stop"></i> Stop</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="controlVM('{{ vm.id }}', 'restart')"><i class="fas fa-redo"></i> Restart</button>
+        {% else %}
+            <button type="button" class="btn btn-success btn-sm" onclick="controlVM('{{ vm.id }}', 'start')"><i class="fas fa-play"></i> Start</button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="stats-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 1rem;">
+    <div class="stat-card" style="--card-gradient: linear-gradient(135deg, rgba(99,102,241,.2), rgba(99,102,241,.08));">
+        <div class="stat-label">CPU</div>
+        <div class="stat-value">{{ vm.cpus or 0 }} vCPU</div>
+        <div class="stat-foot">Allocated</div>
+    </div>
+    <div class="stat-card" style="--card-gradient: linear-gradient(135deg, rgba(16,185,129,.2), rgba(16,185,129,.08));">
+        <div class="stat-label">Memory</div>
+        <div class="stat-value">{{ vm.memory or 0 }} MB</div>
+        <div class="stat-foot">RAM</div>
+    </div>
+    <div class="stat-card" style="--card-gradient: linear-gradient(135deg, rgba(59,130,246,.2), rgba(59,130,246,.08));">
+        <div class="stat-label">Disk</div>
+        <div class="stat-value">{{ vm.disk_size or 0 }}</div>
+        <div class="stat-foot">Storage</div>
+    </div>
+    <div class="stat-card" style="--card-gradient: linear-gradient(135deg, rgba(168,85,247,.2), rgba(168,85,247,.08));">
+        <div class="stat-label">IP</div>
+        <div class="stat-value">{{ vm.ipv4_address or 'Not assigned' }}</div>
+        <div class="stat-foot">Primary address</div>
+    </div>
+</div>
+
+<div class="grid grid-3" style="margin-bottom: 1rem;">
+    <div class="card">
+        <div class="card-header"><h3>Overview</h3></div>
+        <div class="card-body">
+            <div class="info-list">
+                <div><strong>Owner:</strong> {{ user.username if user else 'Unknown' }}</div>
+                <div><strong>Template:</strong> {{ template_name or vm.template_key or 'Custom' }}</div>
+                <div><strong>Node:</strong> {{ node.name if node else 'Unknown node' }}</div>
+                <div><strong>Hostname:</strong> {{ vm.hostname or vm.vm_name }}</div>
+                <div><strong>Created:</strong> {{ vm.created_at or '—' }}</div>
+                <div><strong>Updated:</strong> {{ vm.updated_at or '—' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3>Networking</h3></div>
+        <div class="card-body">
+            <div class="info-list">
+                <div><strong>Network:</strong> {{ vm.network_type or 'nat' }}</div>
+                <div><strong>IPv4:</strong> {{ vm.ipv4_address or 'Not assigned' }}</div>
+                <div><strong>Gateway:</strong> {{ vm.gateway or 'Not set' }}</div>
+                <div><strong>Netmask:</strong> {{ vm.netmask or '24' }}</div>
+                <div><strong>Bridge Device:</strong> {{ vm.bridge_device or 'vmbr0' }}</div>
+                <div><strong>MAC Address:</strong> {{ vm.mac_address or 'Auto-generated' }}</div>
+                <div><strong>SSH Port:</strong> {{ vm.ssh_port or 'Auto' }}</div>
+                <div><strong>SSH:</strong> {{ vm.username or 'root' }}@{{ vm.ipv4_address or 'host' }}{% if vm.ssh_port %} -p {{ vm.ssh_port }}{% endif %}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3>Quick Actions</h3></div>
+        <div class="card-body">
+            <div style="display:flex; flex-direction:column; gap:0.7rem;">
+                <a href="{{ url_for('admin_vm_console', vm_id=vm.id) }}" class="btn btn-primary btn-block"><i class="fas fa-terminal"></i> Console</a>
+                <a href="{{ url_for('admin_vm_ssh', vm_id=vm.id) }}" class="btn btn-outline btn-block"><i class="fas fa-terminal"></i> SSH Access</a>
+                <button type="button" class="btn btn-outline btn-block" onclick="controlVM('{{ vm.id }}', 'restart')"><i class="fas fa-redo"></i> Restart</button>
+                <button type="button" class="btn btn-danger btn-block" onclick="controlVM('{{ vm.id }}', 'stop')"><i class="fas fa-stop"></i> Stop</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>Credentials</h3></div>
+    <div class="card-body">
+        <div class="info-list">
+            <div><strong>Username:</strong> {{ vm.username or 'root' }}</div>
+            <div><strong>Password:</strong> {{ vm.password or 'Not stored' }}</div>
+            <div><strong>Default User:</strong> {{ template.get('username', 'root') if template else 'root' }}</div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function controlVM(vmId, action) {
+    if (!confirm('Are you sure you want to ' + action + ' this VM?')) {
+        return;
+    }
+
+    const urlTemplate = '{{ url_for("admin_vm_control", vm_id=0, action="noop") }}';
+    const url = urlTemplate.replace('/0/', '/' + vmId + '/').replace('/noop', '/' + action);
+
+    try {
+        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const data = await response.json();
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Action failed');
+        }
+    } catch (error) {
+        alert('Failed to control VM: ' + error.message);
+    }
+}
+</script>
+{% endblock %}

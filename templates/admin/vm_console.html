@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}VM Console - {{ panel_name }}{% endblock %}
+{% block header_title %}VM Console{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: #05070b; }
+    .vm-console-shell {
+        background: #0b0f14;
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+    }
+    .vm-console-topbar {
+        background: #0f141a;
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.75rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .vm-console-terminal {
+        min-height: 560px;
+        background: #05070b;
+        padding: 1rem;
+        font-family: 'JetBrains Mono', Consolas, monospace;
+        font-size: 0.85rem;
+        line-height: 1.6;
+        color: #dfe7f3;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .vm-console-controls {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .vm-console-input {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+    .vm-console-input input {
+        flex: 1;
+        background: #0a0d12;
+        color: #e5eefb;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 0.8rem 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('dashboard') }}" class="breadcrumb-item">Dashboard</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <a href="{{ url_for('admin_dashboard') }}" class="breadcrumb-item">Admin</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <a href="{{ url_for('admin_vms') }}" class="breadcrumb-item">Virtual Machines</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <a href="{{ url_for('admin_vm_detail', vm_id=vm.id) }}" class="breadcrumb-item">{{ vm.vm_name }}</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <span class="breadcrumb-item active">Console</span>
+</div>
+
+<div class="vm-console-shell">
+    <div class="vm-console-topbar">
+        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+            <span class="badge badge-info"><i class="fas fa-terminal"></i> VM Console</span>
+            <strong>{{ vm.vm_name }}</strong>
+        </div>
+        <div class="vm-console-controls">
+            <button class="btn btn-outline" type="button" onclick="clearConsole()"><i class="fas fa-broom"></i> Clear</button>
+            <a href="{{ url_for('admin_vm_detail', vm_id=vm.id) }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Details</a>
+        </div>
+    </div>
+    <div class="vm-console-terminal" id="vm-console-output">Connecting to VM console...
+
+</div>
+    <div class="vm-console-input">
+        <input id="vmConsoleInput" type="text" placeholder="Type command and press Enter..." autocomplete="off">
+        <button class="btn btn-primary" type="button" onclick="sendConsoleCommand()"><i class="fas fa-paper-plane"></i> Send</button>
+    </div>
+</div>
+
+<div id="vm-console-data" data-vm-id="{{ vm.id }}" style="display:none;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const vmId = {{ vm.id|tojson }};
+const outputEl = document.getElementById('vm-console-output');
+const inputEl = document.getElementById('vmConsoleInput');
+
+function appendOutput(text) {
+    outputEl.innerHTML += escapeHtml(text);
+    outputEl.scrollTop = outputEl.scrollHeight;
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function sendConsoleCommand() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+    appendOutput('\nroot@' + vmId + ':~# ' + text + '\n');
+    inputEl.value = '';
+    appendOutput('\n[local echo] command queued for guest shell.\n');
+}
+
+inputEl.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') sendConsoleCommand();
+});
+
+function clearConsole() {
+    outputEl.textContent = 'Console cleared.\n';
+}
+
+function connectConsole() {
+    const streamUrl = '{{ url_for("admin_vm_console_stream", vm_id=vm.id) }}';
+    const source = new EventSource(streamUrl);
+
+    source.onmessage = function (event) {
+        try {
+            const data = JSON.parse(event.data);
+            if (typeof data === 'string') appendOutput(data);
+        } catch (e) {
+            appendOutput(event.data);
+        }
+    };
+
+    source.onerror = function () {
+        appendOutput('\n[stream] reconnecting to VM serial console...\n');
+    };
+}
+
+connectConsole();
+</script>
+{% endblock %}

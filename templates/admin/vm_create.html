@@ -1,0 +1,882 @@
+{% extends "base.html" %}
+
+{% block title %}Create Virtual Machine - {{ panel_name }}{% endblock %}
+{% block header_title %}Create Virtual Machine{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: #05070b;
+    }
+    .vm-create-wrap {
+        max-width: 1220px;
+        margin: 0 auto;
+        padding: 0 1rem 2rem;
+    }
+    .vm-create-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .vm-create-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        margin-bottom: 0.35rem;
+    }
+    .vm-create-title {
+        margin: 0;
+        font-size: clamp(1.7rem, 2vw, 2.4rem);
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+    }
+    .vm-create-title i {
+        color: #ec4899;
+    }
+    .vm-create-subtitle {
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+        font-size: 0.9rem;
+    }
+    .vm-wizard {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+        padding: 0.25rem 0 0.5rem;
+    }
+    .vm-step {
+        display: flex;
+        align-items: center;
+        min-width: 112px;
+        color: var(--text-muted);
+        font-size: 0.73rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .vm-step-num {
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        border: 1px solid var(--border-color);
+        background: rgba(255,255,255,0.02);
+        margin-right: 0.55rem;
+    }
+    .vm-step.active { color: var(--text-primary); }
+    .vm-step.active .vm-step-num {
+        background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
+        color: #05070b;
+        border-color: rgba(255,255,255,0.2);
+    }
+    .vm-step.completed .vm-step-num {
+        background: rgba(16,185,129,0.12);
+        color: #34d399;
+        border-color: rgba(16,185,129,0.45);
+    }
+    .vm-step-connector {
+        flex: 1;
+        height: 1px;
+        min-width: 18px;
+        background: var(--border-color);
+    }
+    .vm-step-connector.done {
+        background: rgba(16,185,129,0.7);
+    }
+    .vm-card {
+        background: rgba(17,24,39,0.72);
+        border: 1px solid var(--border-color);
+        border-radius: 1rem;
+        box-shadow: 0 14px 38px rgba(0,0,0,0.28);
+        overflow: hidden;
+    }
+    .vm-card + .vm-card { margin-top: 1rem; }
+    .vm-card-header {
+        background: rgba(255,255,255,0.02);
+        border-bottom: 1px solid var(--border-color);
+        padding: 1rem 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+    .vm-card-title {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .vm-card-title i { color: #60a5fa; }
+    .vm-card-body {
+        padding: 1.2rem;
+    }
+    .vm-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+    .vm-form-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+    .vm-form-label {
+        display: block;
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 0.45rem;
+        font-weight: 600;
+    }
+    .vm-form-label .required { color: #ff5f5f; }
+    .vm-form-control {
+        width: 100%;
+        background: #0d1117;
+        border: 1px solid var(--border-color);
+        border-radius: 0.72rem;
+        color: var(--text-primary);
+        min-height: 2.8rem;
+        padding: 0.72rem 0.9rem;
+        font-size: 0.92rem;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .vm-form-control:focus {
+        border-color: rgba(96,165,250,0.8);
+        box-shadow: 0 0 0 3px rgba(96,165,250,0.14);
+    }
+    .vm-form-control::placeholder { color: rgba(148,163,184,0.8); }
+    select.vm-form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.85rem center;
+        background-size: 14px;
+        padding-right: 2.5rem;
+    }
+    .vm-template-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+    }
+    .vm-template-card {
+        position: relative;
+        display: block;
+        width: 100%;
+        border: 1px solid var(--border-color);
+        border-radius: 0.9rem;
+        background: rgba(255,255,255,0.01);
+        padding: 0.8rem 0.7rem;
+        cursor: pointer;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .vm-template-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(96,165,250,0.6);
+    }
+    .vm-template-card input { position: absolute; opacity: 0; pointer-events: none; }
+    .vm-template-card.active {
+        border-color: rgba(96,165,250,0.9);
+        background: rgba(59,130,246,0.08);
+        box-shadow: 0 0 0 2px rgba(96,165,250,0.14);
+    }
+    .vm-template-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        height: 2.5rem;
+        margin-bottom: 0.45rem;
+        color: #8b5cf6;
+    }
+    .vm-template-name {
+        font-weight: 700;
+        font-size: 0.82rem;
+        margin-bottom: 0.1rem;
+    }
+    .vm-template-meta {
+        color: var(--text-muted);
+        font-size: 0.7rem;
+    }
+    .vm-info-box {
+        margin-top: 1.1rem;
+        padding: 1rem 1.05rem;
+        border: 1px solid rgba(96,165,250,0.24);
+        background: rgba(59,130,246,0.06);
+        border-radius: 0.9rem;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        line-height: 1.8;
+    }
+    .vm-info-box strong { color: var(--text-primary); }
+    .vm-radio-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.85rem;
+    }
+    .vm-net-option {
+        position: relative;
+        display: block;
+        width: 100%;
+        border: 1px solid var(--border-color);
+        background: rgba(255,255,255,0.02);
+        border-radius: 0.9rem;
+        padding: 0.9rem 0.85rem;
+        cursor: pointer;
+        transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    .vm-net-option input { position: absolute; opacity: 0; pointer-events: none; }
+    .vm-net-option.active {
+        border-color: rgba(96,165,250,0.9);
+        background: rgba(59,130,246,0.08);
+        box-shadow: 0 0 0 2px rgba(96,165,250,0.14);
+    }
+    .vm-net-option:hover { transform: translateY(-1px); }
+    .vm-net-icon {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.7rem;
+        background: rgba(99,102,241,0.12);
+        color: #8b5cf6;
+    }
+    .vm-net-name {
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+    .vm-net-desc {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+    }
+    .vm-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 1.5rem;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    .vm-btn {
+        min-width: 120px;
+        padding: 0.8rem 1.2rem;
+        border-radius: 0.8rem;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-primary);
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .vm-btn:hover { transform: translateY(-1px); }
+    .vm-btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border-color: rgba(59,130,246,0.8);
+        color: white;
+    }
+    .vm-btn-outline {
+        background: rgba(255,255,255,0.02);
+    }
+    .vm-password-wrap { position: relative; }
+    .vm-password-wrap button {
+        position: absolute;
+        right: 0.8rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+    }
+    @media (max-width: 820px) {
+        .vm-grid,
+        .vm-form-row,
+        .vm-radio-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb">
+    <a href="{{ url_for('dashboard') }}" class="breadcrumb-item">Dashboard</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <a href="{{ url_for('admin_dashboard') }}" class="breadcrumb-item">Admin</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <a href="{{ url_for('admin_vms') }}" class="breadcrumb-item">Virtual Machines</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <span class="breadcrumb-item active">Create</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="vm-create-wrap">
+    <div class="vm-create-header">
+        <div>
+            <a href="{{ url_for('admin_vms') }}" class="vm-create-back">
+                <i class="fas fa-arrow-left"></i> Back to VMs
+            </a>
+            <h1 class="vm-create-title"><i class="fas fa-wand-sparkles"></i> Create Virtual Machine</h1>
+            <div class="vm-create-subtitle">Configure and deploy a new QEMU/KVM virtual machine</div>
+        </div>
+    </div>
+
+    <div class="vm-wizard">
+        <div class="vm-step active" id="step-1-indicator"><div class="vm-step-num">1</div>Template</div>
+        <div class="vm-step-connector" id="conn-1"></div>
+        <div class="vm-step" id="step-2-indicator"><div class="vm-step-num">2</div>Hardware</div>
+        <div class="vm-step-connector" id="conn-2"></div>
+        <div class="vm-step" id="step-3-indicator"><div class="vm-step-num">3</div>Network</div>
+        <div class="vm-step-connector" id="conn-3"></div>
+        <div class="vm-step" id="step-4-indicator"><div class="vm-step-num">4</div>Advanced</div>
+        <div class="vm-step-connector" id="conn-4"></div>
+        <div class="vm-step" id="step-5-indicator"><div class="vm-step-num">5</div>Review</div>
+    </div>
+
+    <form id="createVMForm">
+        <div id="step-1" class="wizard-page">
+            <div class="vm-grid">
+                <div class="vm-card">
+                    <div class="vm-card-header">
+                        <h3 class="vm-card-title"><i class="fas fa-server"></i> Select OS Template</h3>
+                    </div>
+                    <div class="vm-card-body">
+                        <div class="vm-form-row">
+                            <div>
+                                <label class="vm-form-label">VM Name <span class="required">*</span></label>
+                                <input type="text" id="vm_name" class="vm-form-control" placeholder="e.g. web-01" required>
+                            </div>
+                            <div>
+                                <label class="vm-form-label">Hostname</label>
+                                <input type="text" id="hostname" class="vm-form-control" placeholder="e.g. web-01">
+                            </div>
+                        </div>
+
+                        <div class="vm-template-grid" id="templateGrid" style="margin-top: 1rem;">
+                            {% if templates %}
+                                {% for template in templates %}
+                                <label class="vm-template-card" data-key="{{ template.key }}">
+                                    <input type="radio" name="template_key" value="{{ template.key }}" data-template-name="{{ template.name }}" data-template-type="{{ template.type }}" data-template-disk="{{ template.disk_size }}" data-template-memory="{{ template.memory }}" data-template-cpus="{{ template.cpus }}" data-template-user="{{ template.username }}" data-template-pass="{{ template.password }}">
+                                    <span style="display:block;">
+                                        <div class="vm-template-icon"><i class="fas fa-server"></i></div>
+                                        <div class="vm-template-name">{{ template.name }}</div>
+                                        <div class="vm-template-meta">{{ template.type or 'Cloud Image' }}</div>
+                                    </span>
+                                </label>
+                                {% endfor %}
+                            {% else %}
+                                <div style="color: var(--text-muted);">No VM templates found.</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="vm-info-box" id="templateDetails">
+                            <strong>Template Details:</strong> Select a template above to see details.
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="vm-card">
+                        <div class="vm-card-header">
+                            <h3 class="vm-card-title"><i class="fas fa-user"></i> VM Owner</h3>
+                        </div>
+                        <div class="vm-card-body">
+                            <div class="form-group">
+                                <label class="vm-form-label">Assign to User <span class="required">*</span></label>
+                                <select id="user_id" class="vm-form-control" required>
+                                    <option value="">Select user...</option>
+                                    {% for user in users %}
+                                    <option value="{{ user.id }}">{{ user.username }} ({{ user.email }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="vm-form-label">Node <span class="required">*</span></label>
+                                <select id="node_id" class="vm-form-control" required>
+                                    <option value="">Select node...</option>
+                                    {% for node in nodes %}
+                                    <option value="{{ node.id }}">{{ node.name }} ({{ node.location }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="vm-card" style="margin-top: 1rem;">
+                        <div class="vm-card-header">
+                            <h3 class="vm-card-title"><i class="fas fa-key"></i> Credentials</h3>
+                        </div>
+                        <div class="vm-card-body">
+                            <div class="form-group">
+                                <label class="vm-form-label">Username</label>
+                                <input type="text" id="username" class="vm-form-control" placeholder="Default from template">
+                            </div>
+                            <div class="form-group">
+                                <label class="vm-form-label">Password</label>
+                                <div class="vm-password-wrap">
+                                    <input type="password" id="password" class="vm-form-control" placeholder="Default from template">
+                                    <button type="button" onclick="togglePasswordVisibility('password', this)"><i class="fas fa-eye"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="step-2" class="wizard-page" style="display: none;">
+            <div class="vm-grid">
+                <div class="vm-card">
+                    <div class="vm-card-header">
+                        <h3 class="vm-card-title"><i class="fas fa-microchip"></i> CPU Configuration</h3>
+                    </div>
+                    <div class="vm-card-body">
+                        <div class="vm-form-row">
+                            <div>
+                                <label class="vm-form-label">CPU Cores</label>
+                                <input type="number" id="cpus" class="vm-form-control" min="1" value="2">
+                            </div>
+                            <div>
+                                <label class="vm-form-label">Memory (MB)</label>
+                                <input type="number" id="memory" class="vm-form-control" min="512" step="256" value="2048">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vm-card">
+                    <div class="vm-card-header">
+                        <h3 class="vm-card-title"><i class="fas fa-hdd"></i> Storage</h3>
+                    </div>
+                    <div class="vm-card-body">
+                        <div class="form-group">
+                            <label class="vm-form-label">Disk Size</label>
+                            <input type="text" id="disk_size" class="vm-form-control" value="20G" placeholder="20G">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="step-3" class="wizard-page" style="display:none;">
+            <div class="vm-card">
+                <div class="vm-card-header">
+                    <h3 class="vm-card-title"><i class="fas fa-network-wired"></i> Network Type</h3>
+                </div>
+                <div class="vm-card-body">
+                    <div class="vm-radio-grid">
+                        <label class="vm-net-option active">
+                            <input type="radio" name="network_mode" value="nat" checked>
+                            <div class="vm-net-icon"><i class="fas fa-wifi"></i></div>
+                            <div class="vm-net-name">NAT</div>
+                            <div class="vm-net-desc">Default private networking with outbound internet access</div>
+                        </label>
+                        <label class="vm-net-option">
+                            <input type="radio" name="network_mode" value="bridge">
+                            <div class="vm-net-icon"><i class="fas fa-link"></i></div>
+                            <div class="vm-net-name">Bridge</div>
+                            <div class="vm-net-desc">Public IP on the LAN / bridge interface</div>
+                        </label>
+                    </div>
+
+                    <input type="hidden" id="network_type" value="nat">
+
+                    <div id="portForwardingCard" style="margin-top: 1rem; display: block;">
+                        <div class="vm-card" style="margin-top: 0;">
+                            <div class="vm-card-header">
+                                <h3 class="vm-card-title"><i class="fas fa-shield-alt"></i> Port Forwarding</h3>
+                            </div>
+                            <div class="vm-card-body">
+                                <div class="vm-form-row">
+                                    <div>
+                                        <label class="vm-form-label">SSH Port</label>
+                                        <input type="number" id="ssh_port" class="vm-form-control" min="1024" max="65535" placeholder="2222">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="staticIpCard" style="display: none; margin-top: 1rem;">
+                        <div class="vm-card" style="margin-top: 0;">
+                            <div class="vm-card-header">
+                                <h3 class="vm-card-title"><i class="fas fa-map-marker-alt"></i> Static IPv4 Configuration</h3>
+                            </div>
+                            <div class="vm-card-body">
+                                <div class="vm-form-row">
+                                    <div>
+                                        <label class="vm-form-label">IPv4 Address</label>
+                                        <input type="text" id="ipv4_address" class="vm-form-control" placeholder="203.0.113.10">
+                                    </div>
+                                    <div>
+                                        <label class="vm-form-label">Gateway</label>
+                                        <input type="text" id="gateway" class="vm-form-control" placeholder="203.0.113.1">
+                                    </div>
+                                    <div>
+                                        <label class="vm-form-label">Netmask</label>
+                                        <input type="number" id="netmask" class="vm-form-control" min="16" max="32" value="24">
+                                    </div>
+                                    <div>
+                                        <label class="vm-form-label">Bridge Device</label>
+                                        <input type="text" id="bridge_device" class="vm-form-control" placeholder="vmbr0" value="vmbr0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="vm-card" style="margin-top: 1rem;">
+                        <div class="vm-card-header">
+                            <h3 class="vm-card-title"><i class="fas fa-network-wired"></i> MAC Address</h3>
+                        </div>
+                        <div class="vm-card-body">
+                            <div class="vm-form-row">
+                                <div>
+                                    <label class="vm-form-label">MAC Address</label>
+                                    <input type="text" id="mac_address" class="vm-form-control" placeholder="Auto-generated or custom">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="step-4" class="wizard-page" style="display:none;">
+            <div class="vm-card">
+                <div class="vm-card-header">
+                    <h3 class="vm-card-title"><i class="fas fa-cogs"></i> Advanced Options</h3>
+                </div>
+                <div class="vm-card-body">
+                    <div class="vm-form-row">
+                        <div>
+                            <label class="vm-form-label">Machine Type</label>
+                            <select id="machine_type" class="vm-form-control">
+                                <option value="q35">Q35</option>
+                                <option value="pc">PC</option>
+                                <option value="virt">Virt</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="vm-form-label">Boot Order</label>
+                            <select id="boot_order" class="vm-form-control">
+                                <option value="cdn">CDN</option>
+                                <option value="c">Hard Disk</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="vm-form-row" style="margin-top: 1rem;">
+                        <div>
+                            <label class="vm-form-label">Additional QEMU Args</label>
+                            <textarea id="extra_args" class="vm-form-control" rows="3" placeholder="Optional extra QEMU arguments"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="step-5" class="wizard-page" style="display:none;">
+            <div class="vm-card">
+                <div class="vm-card-header">
+                    <h3 class="vm-card-title"><i class="fas fa-clipboard-check"></i> Review Configuration</h3>
+                </div>
+                <div class="vm-card-body">
+                    <div id="reviewContent" style="font-size: 0.86rem; color: var(--text-secondary); line-height: 2;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="vm-actions">
+            <button type="button" class="vm-btn vm-btn-outline" id="prevBtn" style="display:none;" onclick="prevStep()"><i class="fas fa-arrow-left"></i> Previous</button>
+            <div style="flex:1;"></div>
+            <button type="button" class="vm-btn vm-btn-primary" id="nextBtn" onclick="nextStep()">Next <i class="fas fa-arrow-right"></i></button>
+            <button type="submit" class="vm-btn vm-btn-primary" id="submitBtn" style="display:none;"><i class="fas fa-plus"></i> Create VM</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentStep = 1;
+    const totalSteps = 5;
+
+    function togglePasswordVisibility(fieldId, btn) {
+        const input = document.getElementById(fieldId);
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        btn.innerHTML = isPassword ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+    }
+
+    function updateTemplateDetails(selected) {
+        if (!selected) {
+            document.getElementById('templateDetails').innerHTML = '<strong>Template Details:</strong> Select a template above to see details.';
+            return;
+        }
+
+        const details = document.getElementById('templateDetails');
+        const disk = selected.dataset.templateDisk || '20G';
+        const memory = selected.dataset.templateMemory || '2048';
+        const cpus = selected.dataset.templateCpus || '2';
+        const user = selected.dataset.templateUser || 'root';
+        const pass = selected.dataset.templatePass || 'root';
+
+        details.innerHTML = `
+            <strong>${selected.dataset.templateName}</strong><br>
+            Type: ${selected.dataset.templateType || 'cloud-init'} • Disk: ${disk} • RAM: ${memory}MB • CPU: ${cpus}<br>
+            Default User: ${user} • Default Password: ${pass}
+        `;
+
+        if (!document.getElementById('disk_size').value.trim()) {
+            document.getElementById('disk_size').value = disk;
+        }
+        if (!document.getElementById('memory').value.trim()) {
+            document.getElementById('memory').value = memory;
+        }
+        if (!document.getElementById('cpus').value.trim()) {
+            document.getElementById('cpus').value = cpus;
+        }
+        if (!document.getElementById('username').value.trim()) {
+            document.getElementById('username').value = user;
+        }
+        if (!document.getElementById('password').value.trim()) {
+            document.getElementById('password').value = pass;
+        }
+    }
+
+    function syncTemplateSelection() {
+        const radios = document.querySelectorAll('input[name="template_key"]');
+        radios.forEach(radio => {
+            const card = radio.closest('.vm-template-card');
+            card.classList.toggle('active', radio.checked);
+        });
+
+        const checked = document.querySelector('input[name="template_key"]:checked');
+        if (checked) {
+            updateTemplateDetails(checked.closest('.vm-template-card'));
+        }
+    }
+
+    function updateNetworkUI() {
+        const mode = document.querySelector('input[name="network_mode"]:checked')?.value || 'nat';
+        const networkType = document.getElementById('network_type');
+        const staticIpCard = document.getElementById('staticIpCard');
+        const portForwardingCard = document.getElementById('portForwardingCard');
+        const shouldShowStatic = mode === 'bridge';
+
+        networkType.value = mode;
+        staticIpCard.style.display = shouldShowStatic ? 'block' : 'none';
+        portForwardingCard.style.display = mode === 'nat' ? 'block' : 'none';
+
+        if (!shouldShowStatic) {
+            document.getElementById('ipv4_address').value = '';
+            document.getElementById('gateway').value = '';
+            document.getElementById('netmask').value = '24';
+            document.getElementById('bridge_device').value = 'vmbr0';
+        }
+
+        document.querySelectorAll('.vm-net-option').forEach(option => {
+            const input = option.querySelector('input');
+            option.classList.toggle('active', input.checked);
+        });
+    }
+
+    function goToStep(step) {
+        for (let i = 1; i <= totalSteps; i++) {
+            const page = document.getElementById(`step-${i}`);
+            const indicator = document.getElementById(`step-${i}-indicator`);
+            const connector = document.getElementById(`conn-${i}`);
+            if (page) page.style.display = i === step ? 'block' : 'none';
+            if (indicator) {
+                indicator.classList.toggle('active', i === step);
+                indicator.classList.toggle('completed', i < step);
+            }
+            if (connector) connector.classList.toggle('done', i < step);
+        }
+
+        currentStep = step;
+        document.getElementById('prevBtn').style.display = step === 1 ? 'none' : 'inline-flex';
+        document.getElementById('nextBtn').style.display = step === totalSteps ? 'none' : 'inline-flex';
+        document.getElementById('submitBtn').style.display = step === totalSteps ? 'inline-flex' : 'none';
+
+        if (step === totalSteps) {
+            buildReview();
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function validateStep(step) {
+        if (step === 1) {
+            const vmName = document.getElementById('vm_name').value.trim();
+            const userId = document.getElementById('user_id').value;
+            const nodeId = document.getElementById('node_id').value;
+            const checkedTemplate = document.querySelector('input[name="template_key"]:checked');
+            if (!vmName || !userId || !nodeId || !checkedTemplate) {
+                showToast('Please fill in the VM name, owner, node, and template.', 'warning');
+                return false;
+            }
+            if (!/^[a-z0-9][a-z0-9-]*$/.test(vmName)) {
+                showToast('VM name must be lowercase letters, numbers, or hyphens only.', 'warning');
+                return false;
+            }
+            return true;
+        }
+
+        if (step === 2) {
+            const memory = Number(document.getElementById('memory').value || 0);
+            const cpus = Number(document.getElementById('cpus').value || 0);
+            if (memory < 512 || cpus < 1) {
+                showToast('Memory must be at least 512MB and CPU must be at least 1.', 'warning');
+                return false;
+            }
+            return true;
+        }
+
+        if (step === 3) {
+            const mode = document.querySelector('input[name="network_mode"]:checked')?.value || 'nat';
+            if (mode === 'bridge') {
+                const ipv4 = document.getElementById('ipv4_address').value.trim();
+                const gateway = document.getElementById('gateway').value.trim();
+                if (!ipv4 || !gateway) {
+                    showToast('Bridge mode requires a static IPv4 address and gateway.', 'warning');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        return true;
+    }
+
+    function nextStep() {
+        if (!validateStep(currentStep)) return;
+        if (currentStep < totalSteps) {
+            goToStep(currentStep + 1);
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 1) {
+            goToStep(currentStep - 1);
+        }
+    }
+
+    function buildReview() {
+        const vmName = document.getElementById('vm_name').value.trim() || '—';
+        const hostname = document.getElementById('hostname').value.trim() || '—';
+        const selectedTemplate = document.querySelector('input[name="template_key"]:checked');
+        const templateName = selectedTemplate ? selectedTemplate.dataset.templateName : '—';
+        const selectedNetwork = document.querySelector('input[name="network_mode"]:checked')?.value || 'nat';
+        const review = document.getElementById('reviewContent');
+        review.innerHTML = `
+            <div><strong>VM Name:</strong> ${vmName}</div>
+            <div><strong>Hostname:</strong> ${hostname}</div>
+            <div><strong>Template:</strong> ${templateName}</div>
+            <div><strong>Owner:</strong> ${document.getElementById('user_id').selectedOptions[0]?.text || '—'}</div>
+            <div><strong>Node:</strong> ${document.getElementById('node_id').selectedOptions[0]?.text || '—'}</div>
+            <div><strong>CPU:</strong> ${document.getElementById('cpus').value} vCPU</div>
+            <div><strong>Memory:</strong> ${document.getElementById('memory').value} MB</div>
+            <div><strong>Disk:</strong> ${document.getElementById('disk_size').value}</div>
+            <div><strong>Network:</strong> ${selectedNetwork.toUpperCase()}</div>
+            <div><strong>IPv4:</strong> ${document.getElementById('ipv4_address').value || 'Auto / DHCP'}</div>
+            <div><strong>Gateway:</strong> ${document.getElementById('gateway').value || '—'}</div>
+            <div><strong>Username:</strong> ${document.getElementById('username').value || 'template default'}</div>
+        `;
+    }
+
+    async function submitCreate(event) {
+        event.preventDefault();
+
+        const payload = {
+            user_id: parseInt(document.getElementById('user_id').value, 10),
+            node_id: parseInt(document.getElementById('node_id').value, 10),
+            vm_name: document.getElementById('vm_name').value.trim(),
+            hostname: document.getElementById('hostname').value.trim(),
+            template_key: document.querySelector('input[name="template_key"]:checked')?.value || '',
+            template_type: document.querySelector('input[name="template_key"]:checked')?.dataset?.templateType || 'cloud-init',
+            os_template: document.querySelector('input[name="template_key"]:checked')?.value || '',
+            username: document.getElementById('username').value.trim() || null,
+            password: document.getElementById('password').value.trim() || null,
+            memory: parseInt(document.getElementById('memory').value, 10) || 2048,
+            cpus: parseInt(document.getElementById('cpus').value, 10) || 2,
+            disk_size: document.getElementById('disk_size').value.trim() || '20G',
+            network_type: document.getElementById('network_type').value || 'nat',
+            ipv4_address: document.getElementById('ipv4_address').value.trim() || null,
+            gateway: document.getElementById('gateway').value.trim() || null,
+            netmask: document.getElementById('netmask').value || '24',
+            bridge_device: document.getElementById('bridge_device').value.trim() || 'vmbr0',
+            ssh_port: document.getElementById('ssh_port').value.trim() || null,
+            mac_address: document.getElementById('mac_address').value.trim() || null,
+            machine_type: document.getElementById('machine_type').value,
+            boot_order: document.getElementById('boot_order').value,
+            extra_args: document.getElementById('extra_args').value.trim() || null,
+        };
+
+        if (!payload.user_id || !payload.node_id || !payload.vm_name || !payload.template_key) {
+            showToast('Please fill all required fields.', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch('/admin/vm/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (data.success) {
+                showToast('Virtual machine created successfully.', 'success');
+                setTimeout(() => window.location.href = '{{ url_for("admin_vms") }}', 800);
+            } else {
+                showToast(data.error || 'Failed to create VM.', 'danger');
+            }
+        } catch (error) {
+            showToast('Request failed: ' + error.message, 'danger');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const templateCards = document.querySelectorAll('input[name="template_key"]');
+        templateCards.forEach(card => {
+            card.addEventListener('change', function () {
+                syncTemplateSelection();
+            });
+        });
+
+        document.querySelectorAll('input[name="network_mode"]').forEach(radio => {
+            radio.addEventListener('change', updateNetworkUI);
+        });
+
+        const firstTemplate = document.querySelector('input[name="template_key"]');
+        if (firstTemplate) {
+            firstTemplate.checked = true;
+            syncTemplateSelection();
+        }
+
+        updateNetworkUI();
+        goToStep(1);
+    });
+
+    document.getElementById('createVMForm').addEventListener('submit', submitCreate);
+</script>
+{% endblock %}

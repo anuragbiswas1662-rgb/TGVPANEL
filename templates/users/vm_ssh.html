@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}VM SSH - {{ panel_name }}{% endblock %}
+{% block header_title %}VM SSH{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ssh-box {
+        background: #0b0f14;
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 1.25rem;
+    }
+    .ssh-command {
+        background: #0f141a;
+        border: 1px solid var(--border-color);
+        color: #d9eaf9;
+        border-radius: 10px;
+        padding: 1rem;
+        font-family: 'JetBrains Mono', Consolas, monospace;
+        overflow: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('dashboard') }}" class="breadcrumb-item">Dashboard</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <a href="{{ url_for('user_vm_detail', vm_id=vm.id) }}" class="breadcrumb-item">{{ vm.vm_name }}</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <span class="breadcrumb-item active">SSH</span>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-terminal"></i> VM SSH Access</h3>
+    </div>
+    <div class="card-body">
+        <div class="ssh-box">
+            <p style="margin-bottom: 1rem; color: var(--text-secondary);">Use the command below to connect to this VM over SSH.</p>
+            <div class="ssh-command">
+ssh {{ vm.username or 'root' }}@{{ node.name if node else vm.ipv4_address or 'node-host' }} -p {{ vm.ssh_port or 22 }}
+            </div>
+            <div style="margin-top:1rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+                <button class="btn btn-primary" type="button" onclick="copyCommand()"><i class="fas fa-copy"></i> Copy</button>
+                <a href="{{ url_for('user_vm_detail', vm_id=vm.id) }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyCommand() {
+    const command = `ssh {{ vm.username or 'root' }}@{{ node.name if node else vm.ipv4_address or 'node-host' }} -p {{ vm.ssh_port or 22 }}`;
+    navigator.clipboard.writeText(command).then(() => {
+        showToast('SSH command copied to clipboard.', 'success');
+    }).catch(() => {
+        showToast('Could not copy command automatically.', 'warning');
+    });
+}
+</script>
+{% endblock %}

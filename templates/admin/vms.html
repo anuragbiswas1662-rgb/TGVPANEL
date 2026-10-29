@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Virtual Machines - {{ panel_name }}{% endblock %}
+{% block header_title %}Virtual Machines{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb">
+    <a href="{{ url_for('dashboard') }}" class="breadcrumb-item">Dashboard</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <a href="{{ url_for('admin_dashboard') }}" class="breadcrumb-item">Admin</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <span class="breadcrumb-item active">Virtual Machines</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 1rem;">
+    <div class="page-title-section">
+        <h1 class="page-title">
+            <span class="title-icon"><i class="fas fa-server"></i></span>
+            Virtual Machines
+        </h1>
+        <p class="page-subtitle">Monitor, launch, and manage all KVM guests from one place.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('admin_vps_create') }}" class="btn btn-outline btn-sm">
+            <i class="fas fa-server"></i> Create LXC VPS
+        </a>
+        <a href="{{ url_for('admin_vm_create') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Create VM
+        </a>
+    </div>
+</div>
+
+<div class="stats-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 1rem;">
+    <div class="stat-card" style="--card-gradient: linear-gradient(135deg, rgba(99,102,241,.2), rgba(99,102,241,.08));">
+        <div class="stat-label">Total</div>
+        <div class="stat-value">{{ vms|length if vms else 0 }}</div>
+        <div class="stat-foot">All guests</div>
+    </div>
+    <div class="stat-card" style="--card-gradient: linear-gradient(135deg, rgba(16,185,129,.2), rgba(16,185,129,.08));">
+        <div class="stat-label">Running</div>
+        <div class="stat-value">{{ vms|selectattr('status','equalto','running')|list|length if vms else 0 }}</div>
+        <div class="stat-foot">Online now</div>
+    </div>
+    <div class="stat-card" style="--card-gradient: linear-gradient(135deg, rgba(148,163,184,.2), rgba(148,163,184,.08));">
+        <div class="stat-label">Stopped</div>
+        <div class="stat-value">{{ vms|selectattr('status','equalto','stopped')|list|length if vms else 0 }}</div>
+        <div class="stat-foot">Offline</div>
+    </div>
+    <div class="stat-card" style="--card-gradient: linear-gradient(135deg, rgba(59,130,246,.2), rgba(59,130,246,.08));">
+        <div class="stat-label">CPU</div>
+        <div class="stat-value">{{ (vms|sum(attribute='cpus') if vms else 0) }} vCPU</div>
+        <div class="stat-foot">Allocated</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header" style="justify-content: space-between; align-items: center;">
+        <h3>VM Inventory</h3>
+        <div class="badge badge-info">KVM / QEMU</div>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>VM</th>
+                    <th>Owner</th>
+                    <th>Node</th>
+                    <th>Template</th>
+                    <th>Resources</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if vms %}
+                    {% for vm in vms %}
+                    <tr>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <div class="user-avatar" style="width:34px; height:34px; background: linear-gradient(135deg, #10b981, #3b82f6);">
+                                    <i class="fas fa-server" style="font-size:0.8rem;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:600;">{{ vm.vm_name }}</div>
+                                    <div style="font-size:0.72rem; color: var(--text-muted);">{{ vm.hostname or vm.vm_name }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ vm.username or 'Unknown' }}</td>
+                        <td>{{ vm.node_name or 'Unknown node' }}</td>
+                        <td>{{ vm.template_key or vm.os_template or 'custom' }}</td>
+                        <td>{{ vm.memory or 0 }} MB / {{ vm.cpus or 0 }} vCPU / {{ vm.disk_size or 0 }}</td>
+                        <td>
+                            <span class="badge badge-{{ 'success' if vm.status == 'running' else 'secondary' if vm.status == 'stopped' else 'warning' }}">
+                                {{ vm.status or 'stopped' }}
+                            </span>
+                        </td>
+                        <td>{{ vm.created_at or '—' }}</td>
+                        <td>
+                            <a href="{{ url_for('admin_vm_detail', vm_id=vm.id) }}" class="btn btn-sm btn-primary">Open</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align:center; color: var(--text-muted); padding: 1.75rem;">
+                            No virtual machines have been created yet.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

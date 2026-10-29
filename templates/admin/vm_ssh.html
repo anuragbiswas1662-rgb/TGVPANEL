@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}VM SSH - {{ panel_name }}{% endblock %}
+{% block header_title %}VM SSH{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: #05070b;
+    }
+    .ssh-shell {
+        background: #0b0f14;
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        box-shadow: 0 14px 34px rgba(0,0,0,0.28);
+        overflow: hidden;
+    }
+    .ssh-topbar {
+        background: #0f141a;
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.9rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .ssh-body {
+        padding: 1.25rem;
+    }
+    .ssh-command-box {
+        background: #05070b;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1rem 1.1rem;
+        color: #dfeaf8;
+        font-family: 'JetBrains Mono', Consolas, monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('dashboard') }}" class="breadcrumb-item">Dashboard</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <a href="{{ url_for('admin_dashboard') }}" class="breadcrumb-item">Admin</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <a href="{{ url_for('admin_vms') }}" class="breadcrumb-item">Virtual Machines</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <a href="{{ url_for('admin_vm_detail', vm_id=vm.id) }}" class="breadcrumb-item">{{ vm.vm_name }}</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <span class="breadcrumb-item active">SSH</span>
+</div>
+
+<div class="ssh-shell">
+    <div class="ssh-topbar">
+        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+            <span class="badge badge-info"><i class="fas fa-terminal"></i> SSH Access</span>
+            <strong>{{ vm.vm_name }}</strong>
+        </div>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <a href="{{ url_for('admin_vm_detail', vm_id=vm.id) }}" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Details</a>
+        </div>
+    </div>
+    <div class="ssh-body">
+        <p style="margin:0; color: var(--text-secondary);">Use the command below to connect to this VM over SSH with the configured username and password.</p>
+        <div class="ssh-command-box">ssh {{ vm.username or 'root' }}@{{ node.name if node else 'node-host' }} -p {{ vm.ssh_port or 22 }}</div>
+        <div style="margin-top:1rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+            <button class="btn btn-primary" type="button" onclick="copyCommand()"><i class="fas fa-copy"></i> Copy</button>
+            <a href="{{ url_for('admin_vm_detail', vm_id=vm.id) }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyCommand() {
+    const command = `ssh {{ vm.username or 'root' }}@{{ node.name if node else 'node-host' }} -p {{ vm.ssh_port or 22 }}`;
+    navigator.clipboard.writeText(command).then(() => {
+        showToast('SSH command copied to clipboard.', 'success');
+    }).catch(() => {
+        showToast('Could not copy command automatically.', 'warning');
+    });
+}
+</script>
+{% endblock %}

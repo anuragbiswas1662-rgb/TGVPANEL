@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}My Virtual Machines - {{ panel_name }}{% endblock %}
+{% block header_title %}My Virtual Machines{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb">
+    <a href="{{ url_for('dashboard') }}" class="breadcrumb-item">Dashboard</a>
+    <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+    <span class="breadcrumb-item active">My Virtual Machines</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
+        <h2 style="margin:0; font-size:1.2rem;">Your Virtual Machines</h2>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+
+    {% if vms %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>VM</th>
+                    <th>Node</th>
+                    <th>Template</th>
+                    <th>Resources</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vm in vms %}
+                <tr>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <div class="user-avatar" style="width:34px; height:34px; background: linear-gradient(135deg, #10b981, #3b82f6);">
+                                <i class="fas fa-server" style="font-size:0.85rem;"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight:600;">{{ vm.vm_name }}</div>
+                                <div style="font-size:0.72rem; color: var(--text-muted);">{{ vm.hostname or vm.vm_name }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ vm.node_id }}</td>
+                    <td>{{ vm.template_key or vm.os_template or 'custom' }}</td>
+                    <td>{{ vm.memory }} MB / {{ vm.cpus }} vCPU / {{ vm.disk_size }}</td>
+                    <td>
+                        <span class="badge badge-{{ 'success' if vm.status == 'running' else 'secondary' }}">{{ vm.status }}</span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('user_vm_detail', vm_id=vm.id) }}" class="btn btn-sm btn-primary">Open</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding:2rem; text-align:center; color: var(--text-muted);">
+        You do not have any virtual machines yet.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

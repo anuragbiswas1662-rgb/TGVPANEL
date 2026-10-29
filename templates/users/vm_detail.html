@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}My VM {{ vm.vm_name }}
+<script>
+async function controlVM(vmId, action) {
+    if (!confirm('Are you sure you want to ' + action + ' this VM?')) {
+        return;
+    }
+
+    const urlTemplate = '{{ url_for("user_vm_control", vm_id=0, action="noop") }}';
+    const url = urlTemplate.replace('/0/', '/' + vmId + '/').replace('/noop', '/' + action);
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Action failed');
+        }
+    } catch (error) {
+        alert('Failed to control VM: ' + error.message);
+    }
+}
+</script>
+
+{% endblock %}
+{% block header_title %}{{ vm.vm_name }}
+<script>
+async function controlVM(vmId, action) {
+    if (!confirm('Are you sure you want to ' + action + ' this VM?')) {
+        return;
+    }
+
+    const urlTemplate = '{{ url_for("user_vm_control", vm_id=0, action="noop") }}';
+    const url = urlTemplate.replace('/0/', '/' + vmId + '/').replace('/noop', '/' + action);
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Action failed');
+        }
+    } catch (error) {
+        alert('Failed to control VM: ' + error.message);
+    }
+}
+</script>
+
+{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <div class="user-avatar" style="width:60px; height:60px; background: linear-gradient(135deg, #10b981, #3b82f6);">
+                <i class="fas fa-server" style="font-size:1.5rem;"></i>
+            </div>
+            <div>
+                <h2 style="margin:0;">{{ vm.vm_name }}</h2>
+                <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; color: var(--text-secondary);">
+                    <span class="badge badge-info">ID #{{ vm.id }}</span>
+                    <span>{{ template_name }}</span>
+                </div>
+            </div>
+        </div>
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+            {% if vm.status == "running" %}
+            <button type="button" class="btn btn-warning" onclick="controlVM('{{ vm.id }}', 'stop')"><i class="fas fa-stop"></i> Stop</button>
+            <button type="button" class="btn btn-outline" onclick="controlVM('{{ vm.id }}', 'restart')"><i class="fas fa-redo"></i> Restart</button>
+            {% else %}
+            <button type="button" class="btn btn-success" onclick="controlVM('{{ vm.id }}', 'start')"><i class="fas fa-play"></i> Start</button>
+            {% endif %}
+            <a href="{{ url_for('user_vm_console', vm_id=vm.id) }}" class="btn btn-primary"><i class="fas fa-terminal"></i> Console</a>
+            <a href="{{ url_for('user_vm_ssh', vm_id=vm.id) }}" class="btn btn-outline"><i class="fas fa-terminal"></i> SSH</a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-header"><h3>System</h3></div>
+        <div class="card-body">
+            <div class="info-list">
+                <div><strong>Hostname:</strong> {{ vm.hostname or vm.vm_name }}</div>
+                <div><strong>Template:</strong> {{ template_name }}</div>
+                <div><strong>Node:</strong> {{ node.name if node else 'Unknown' }}</div>
+                <div><strong>Status:</strong> <span class="badge badge-{{ 'success' if vm.status == 'running' else 'secondary' }}">{{ vm.status }}</span></div>
+                <div><strong>Network:</strong> {{ vm.network_type or 'nat' }}</div>
+                <div><strong>IPv4:</strong> {{ vm.ipv4_address or 'Not assigned' }}</div>
+                <div><strong>Gateway:</strong> {{ vm.gateway or 'Not set' }}</div>
+                <div><strong>Bridge Device:</strong> {{ vm.bridge_device or 'vmbr0' }}</div>
+                <div><strong>MAC Address:</strong> {{ vm.mac_address or 'Auto-generated' }}</div>
+                <div><strong>SSH Port:</strong> {{ vm.ssh_port or 'Auto' }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3>Resources</h3></div>
+        <div class="card-body">
+            <div class="info-list">
+                <div><strong>Memory:</strong> {{ vm.memory }} MB</div>
+                <div><strong>CPU:</strong> {{ vm.cpus }} vCPU</div>
+                <div><strong>Disk:</strong> {{ vm.disk_size }}</div>
+                <div><strong>Network:</strong> {{ vm.network_type or 'nat' }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function controlVM(vmId, action) {
+    if (!confirm('Are you sure you want to ' + action + ' this VM?')) {
+        return;
+    }
+
+    const urlTemplate = '{{ url_for("user_vm_control", vm_id=0, action="noop") }}';
+    const url = urlTemplate.replace('/0/', '/' + vmId + '/').replace('/noop', '/' + action);
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Action failed');
+        }
+    } catch (error) {
+        alert('Failed to control VM: ' + error.message);
+    }
+}
+</script>
+
+{% endblock %}
